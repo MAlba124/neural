@@ -41,12 +41,12 @@ impl NeuralNetwork {
         let inputs = Matrix::from_vec(input);
         let mut hidden = self.weights_ih.product(&inputs);
         hidden.add_matrix(&self.bias_h);
-
         // Activation function
         hidden.map(&sigmoid);
 
         let mut output = self.weights_ho.product(&hidden);
         output.add_matrix(&self.bias_o);
+        output.map(&sigmoid);
 
         output.to_vec()
     }
