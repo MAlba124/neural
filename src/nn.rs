@@ -10,92 +10,95 @@ fn dsigmoid(y: f32) -> f32 {
 }
 
 #[derive(Debug)]
+pub struct Layer {
+    pub weights: Matrix,
+    pub bias: Matrix,
+}
+
+#[derive(Debug)]
 pub struct NeuralNetwork {
-    weights_ih: Matrix,
-    weights_ho: Matrix,
-    bias_h: Matrix,
-    bias_o: Matrix,
+    layers: Vec<Layer>,
     learning_rate: f32,
 }
 
 impl NeuralNetwork {
-    pub fn new(n_input: usize, n_hidden: usize, n_output: usize) -> Self {
-        let mut weights_ih = Matrix::new(n_hidden, n_input);
-        let mut weights_ho = Matrix::new(n_output, n_hidden);
-        let mut bias_h = Matrix::new(n_hidden, 1);
-        let mut bias_o = Matrix::new(n_output, 1);
-        weights_ih.randomize();
-        weights_ho.randomize();
-        bias_h.randomize();
-        bias_o.randomize();
+    pub fn new(n_input: usize, hidden: Vec<usize>, n_output: usize) -> Self {
+        assert!(hidden.len() > 0 && n_output > 0);
+
+        let mut layers = Vec::new();
+
+        let mut layer_arch = vec![n_input];
+        layer_arch.extend(hidden);
+        layer_arch.push(n_output);
+
+        let mut input_weights_count = n_input;
+        for neuron_count in layer_arch {
+            let mut weights = Matrix::new(neuron_count, input_weights_count);
+            weights.randomize();
+            let mut bias = Matrix::new(neuron_count, 1);
+            bias.randomize();
+
+            layers.push(
+                Layer {
+                    weights, bias,
+                }
+            );
+            input_weights_count = neuron_count;
+        }
+
         Self {
-            weights_ih,
-            weights_ho,
-            bias_h,
-            bias_o,
             learning_rate: 0.003,
+            layers,
         }
     }
 
     pub fn feedforward(&self, input: Vec<f32>) -> Vec<f32> {
-        let inputs = Matrix::from_vec(input);
-        let mut hidden = self.weights_ih.product(&inputs);
-        hidden.add_matrix(&self.bias_h);
-        // Activation function
-        hidden.map(&sigmoid);
+        let mut inputs = Matrix::from_vec(input);
 
-        let mut output = self.weights_ho.product(&hidden);
-        output.add_matrix(&self.bias_o);
-        output.map(&sigmoid);
+        for layer in &self.layers {
+            let mut new = layer.weights.product(&inputs);
+            new.add_matrix(&layer.bias);
+            new.map(&sigmoid);
+            inputs = new;
+        }
 
-        output.to_vec()
+        inputs.to_vec()
     }
 
     pub fn train(&mut self, inputs: Vec<f32>, targets: Vec<f32>) {
-        let inputs = Matrix::from_vec(inputs);
-        let mut hidden = self.weights_ih.product(&inputs);
-        hidden.add_matrix(&self.bias_h);
-        // Activation function
-        hidden.map(&sigmoid);
+        let mut inputs = Matrix::from_vec(inputs);
+        let orig_inputs = inputs.clone();
 
-        let mut outputs = self.weights_ho.product(&hidden);
-        outputs.add_matrix(&self.bias_o);
-        outputs.map(&sigmoid);
+        let mut results = Vec::new();
+        for layer in &self.layers {
+            let mut new = layer.weights.product(&inputs);
+            new.add_matrix(&layer.bias);
+            new.map(&sigmoid);
+            results.push(new.clone());
+            inputs = new;
+        }
 
         let targets = Matrix::from_vec(targets);
+        let outputs = results.last().unwrap();
+        let mut errors = targets.subtract_matrix(&outputs);
 
-        let output_errors = targets.subtract_matrix(&outputs);
+        for (index, layer) in self.layers.iter_mut().enumerate().rev() {
+            let mut gradients = results[index].map_ret(&dsigmoid);
+            gradients.multiply_matrix(&errors);
+            gradients.multiply_scalar(self.learning_rate);
 
-        // Calculate gradient
-        let mut gradients = outputs.map_ret(&dsigmoid);
-        gradients.multiply_matrix(&output_errors);
-        gradients.multiply_scalar(self.learning_rate);
+            let transposed = if index == 0 {
+                orig_inputs.transpose()
+            } else {
+                results[index - 1].transpose()
+            };
+            let weights_deltas = gradients.product(&transposed);
 
-        // Calculate deltas
-        let hidden_t = hidden.transpose();
-        // let weights_ho_deltas =  gradients.multiply_matrix_ret(&hidden_t);
-        let weights_ho_deltas =  gradients.product(&hidden_t);
+            layer.weights.add_matrix(&weights_deltas);
+            layer.bias.add_matrix(&gradients);
 
-        // Adjust the wieghts by deltas
-        self.weights_ho.add_matrix(&weights_ho_deltas);
-        // Adjust the bias by its deltas
-        self.bias_o.add_matrix(&gradients);
-
-        let who_t = self.weights_ho.transpose();
-        // let hidden_errors = who_t.multiply_matrix_ret(&output_errors);
-        let hidden_errors = who_t.product(&output_errors);
-
-        // Calculate hidden gradient
-        let mut hidden_gradient = hidden.map_ret(&dsigmoid);
-        hidden_gradient.multiply_matrix(&hidden_errors);
-        hidden_gradient.multiply_scalar(self.learning_rate);
-
-        // Calculate input->hidden deltas
-        let inputs_t = inputs.transpose();
-        // let weights_ih_deltas =  hidden_gradient.multiply_matrix_ret(&inputs_t);
-        let weights_ih_deltas =  hidden_gradient.product(&inputs_t);
-        self.weights_ih.add_matrix(&weights_ih_deltas);
-        // Adjust the bias by its deltas
-        self.bias_h.add_matrix(&hidden_gradient);
+            let weights_t = layer.weights.transpose();
+            errors = weights_t.product(&errors);
+        }
     }
 }

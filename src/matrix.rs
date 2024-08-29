@@ -59,7 +59,7 @@ impl Matrix {
     }
 
     pub fn multiply_matrix(&mut self, m: &Self) {
-        assert_eq!(m.size(), self.size());
+        assert_eq!(self.size(), m.size());
         for i in 0..self.rows {
             for j in 0..self.columns {
                 self.data[i][j] *= m.data[i][j];
