@@ -76,33 +76,46 @@ impl Matrix {
 
         let mut res = Self::new(self.rows, b.size().1);
 
+        let b_transposed = b.transpose();
+
         let a = self.data.as_ptr();
-        let bm = b.data.as_ptr();
+        let btm = b_transposed.data.as_ptr();
+        let r = res.data.as_mut_ptr();
 
         let res_rows = res.rows as isize;
         let res_cols = res.columns as isize;
         let self_cols = self.columns as isize;
-        let b_cols = b.columns as isize;
+        let b_t_cols = b_transposed.columns as isize;
 
         for i in 0..res_rows {
             for j in 0..res_cols {
                 let mut sum = 0.0;
                 for k in 0..self_cols {
                     unsafe {
-                        sum += *a.offset((k + self_cols * i) as isize) * *bm.offset((j + b_cols * k) as isize);
+                        sum += *a.offset((k + self_cols * i) as isize) * *btm.offset((k + b_t_cols * j) as isize);
                     }
                 }
-                res.data[(j + res_cols * i) as usize] = sum;
+                unsafe {
+                    *r.offset(j + res_cols * i) = sum;
+                }
             }
         }
         res
     }
 
+    #[inline(always)]
     pub fn transpose(&self) -> Self {
         let mut res = Self::new(self.columns, self.rows);
-        for i in 0..self.rows {
-            for j in 0..self.columns {
-                res.data[i + res.columns * j] = self.data[j + self.columns * i];
+        let rd = res.data.as_mut_ptr();
+        let sd = self.data.as_ptr();
+        let self_rows = self.rows as isize;
+        let self_cols = self.columns as isize;
+        let res_cols = res.columns as isize;
+        for i in 0..self_rows {
+            for j in 0..self_cols {
+                unsafe {
+                    *rd.offset(i + res_cols * j) = *sd.offset(j + self_cols * i);
+                }
             }
         }
         res

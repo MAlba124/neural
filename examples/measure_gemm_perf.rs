@@ -27,3 +27,12 @@ fn main() {
 //   Size: 512x512 Perf: 1.27 GFLOP/S
 //   Size: 1024x1024 Perf: 1.21 GFLOP/S
 //   Size: 2048x2048 Perf: 0.58 GFLOP/S
+
+// 22:48 30.08.2024:
+//   Size: 8x8 Perf: 0.62 GFLOP/S
+//   Size: 64x64 Perf: 3.44 GFLOP/S
+//   Size: 128x128 Perf: 2.51 GFLOP/S
+//   Size: 256x256 Perf: 2.22 GFLOP/S
+//   Size: 512x512 Perf: 2.28 GFLOP/S
+//   Size: 1024x1024 Perf: 2.30 GFLOP/S
+//   Size: 2048x2048 Perf: 2.02 GFLOP/S
