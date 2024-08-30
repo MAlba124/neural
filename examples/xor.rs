@@ -1,7 +1,7 @@
 use rand::seq::SliceRandom;
 use neural::nn::NeuralNetwork;
 
-fn xor_problem() {
+fn main() {
     let training_data = vec![
         (vec![0.0, 1.0], vec![1.0]),
         (vec![1.0, 0.0], vec![1.0]),
@@ -42,8 +42,4 @@ fn xor_problem() {
     //   NN says: [0.9826742] (should be ~1.0)
     //   NN says: [0.014388413] (should be ~0.0)
     //   NN says: [0.014388318] (should be ~0.0)
-}
-
-fn main() {
-    xor_problem();
 }
