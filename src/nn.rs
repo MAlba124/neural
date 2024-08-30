@@ -52,6 +52,10 @@ impl NeuralNetwork {
         }
     }
 
+    pub fn set_learning_rate(&mut self, lr: f32) {
+        self.learning_rate = lr;
+    }
+
     pub fn feedforward(&self, input: Vec<f32>) -> Vec<f32> {
         let mut inputs = Matrix::from_vec(input);
 

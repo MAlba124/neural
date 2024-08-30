@@ -9,8 +9,8 @@ fn main() {
         (vec![1.0, 1.0], vec![0.0]),
     ];
 
-    let mut nn = NeuralNetwork::new(2, vec![4, 8, 4], 1);
-
+    let mut nn = NeuralNetwork::new(2, vec![16, 16], 1);
+    nn.set_learning_rate(0.01);
 
     println!("Before training:");
     println!("  NN says: {:?} (should be ~1.0)", nn.feedforward(vec![1.0, 0.0]));
