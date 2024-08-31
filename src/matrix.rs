@@ -228,11 +228,7 @@ impl Matrix {
 
 #[cfg(test)]
 mod tests {
-    extern crate test;
-
     use super::*;
-
-    use test::Bencher;
 
     macro_rules! indx {
         ($a:expr, $cc:expr, $r:expr, $c:expr) => {
@@ -285,17 +281,6 @@ mod tests {
         indx!(a.data,a.columns,0,0)=3.0;indx!(a.data, a.columns,0,1)=6.0;indx!(a.data,a.columns,0,2)=7.0;
         indx!(a.data,a.columns,1,0)=13.0;indx!(a.data, a.columns,1,1)=16.0;indx!(a.data,a.columns,1,2)=17.0;
         assert_eq!(a.to_vec(), vec![3.0, 6.0, 7.0, 13.0, 16.0, 17.0]);
-    }
-
-    #[bench]
-    fn bench_add_matrix(b: &mut Bencher) {
-        b.iter(|| {
-            let mut a = Matrix::new(1024, 1024);
-            a.randomize();
-            let mut b = Matrix::new(1024 ,1024);
-            b.randomize();
-            test::black_box(a.add_matrix(&b));
-        });
     }
 }
 
