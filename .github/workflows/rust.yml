@@ -14,13 +14,11 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    strategy:
-        matrix:
-            toolchain:
-                - nightly
-
     steps:
     - uses: actions/checkout@v4
+      with:
+        toolchain: nightly
+        override: true
     - name: Build
       run: cargo build --verbose
     - name: Run tests
