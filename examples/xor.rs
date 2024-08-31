@@ -20,7 +20,7 @@ fn main() {
 
     for _ in 0..1000000 {
         let (inputs, target) = training_data.choose(&mut rand::thread_rng()).unwrap();
-        nn.train(inputs.clone(), target.clone());
+        nn.train(&inputs, &target);
     }
 
     println!("########################################");
