@@ -26,6 +26,24 @@ struct Image {
     pub label: [f32; 10],
 }
 
+#[inline(always)]
+fn secs_to_human(secs: u64) -> String {
+    let mut secs = secs;
+    let mut s = String::new();
+    if secs > 60 * 60 {
+        let hours = secs / 60 * 60;
+        secs -= hours * 60 * 60;
+        s.push_str(&format!("{}h", hours));
+    }
+    if secs > 60 {
+        let mins = secs / 60;
+        secs -= mins * 60;
+        s.push_str(&format!("{}m", mins));
+    }
+    s.push_str(&format!("{}s", secs));
+    s
+}
+
 fn parse_training_images() -> Vec<Image> {
     let mut images = Vec::new();
     let img_f = File::open("./data/mnist/train-images-idx3-ubyte").unwrap();
@@ -98,11 +116,49 @@ fn main() {
     let training = parse_training_images();
     let tests = parse_test_images();
 
-    let mut nn = NeuralNetwork::new(784, vec![128, 128], 10);
-    nn.set_learning_rate(0.01);
+    let mut nn = NeuralNetwork::new(784, vec![128, 128, 128], 10);
+    nn.set_learning_rate(0.1);
+
+    let mut before = 100.0;
+    if true {
+        println!("Testing...");
+
+        let mut correct = 0;
+        let mut total = 0;
+        for test_img in &tests {
+            let pred = nn.feedforward(test_img.data.to_vec());
+            let label_index = 'out: {
+                for (i, l) in test_img.label.iter().enumerate() {
+                    if *l == 1.0 {
+                        break 'out i;
+                    }
+                }
+                unreachable!();
+            };
+            let max = {
+                let mut m = 0.0;
+                let mut idx = 0;
+                for (i, p) in pred.iter().enumerate() {
+                    if *p > m {
+                        idx = i;
+                        m = *p;
+                    }
+                }
+                idx
+            };
+            if label_index == max {
+                correct += 1;
+            }
+            total += 1;
+        }
+        before = correct as f64 / total as f64 * 100.0;
+        println!("Accuracy: {:.20}%", before);
+    }
+
 
     let start = Instant::now();
     let mut last = 0;
+    // const TRAINING_ITERATIONS: usize = 100000;
     const TRAINING_ITERATIONS: usize = 60000;
     print!("Training... Elapsed time: 0s [0/{TRAINING_ITERATIONS} 0.00%]");
     io::stdout().flush().unwrap();
@@ -112,19 +168,19 @@ fn main() {
         nn.train(&training_img.data, &training_img.label);
         let elapsed_secs = start.elapsed().as_secs();
         if elapsed_secs - last > 0 {
-            print!("\rTraining... Elapsed time: {}s [{index}/{TRAINING_ITERATIONS} {:.2}%]", elapsed_secs, index as f32 / TRAINING_ITERATIONS as f32 * 100.0);
+            print!("\r\x1B[0JTraining... Elapsed time: {} [{index}/{TRAINING_ITERATIONS} {:.2}%]", secs_to_human(elapsed_secs), index as f32 / TRAINING_ITERATIONS as f32 * 100.0);
             io::stdout().flush().unwrap();
             last = elapsed_secs;
         }
     }
 
-    println!("\r\x1B[0JTrained on {TRAINING_ITERATIONS} images in {}s", start.elapsed().as_secs());
+    println!("\r\x1B[0JTrained on {TRAINING_ITERATIONS} images in {}", secs_to_human(start.elapsed().as_secs()));
 
     println!("Testing...");
 
     let mut correct = 0;
     let mut total = 0;
-    for test_img in &tests[5000..10000] {
+    for test_img in &tests {
         let pred = nn.feedforward(test_img.data.to_vec());
         let label_index = 'out: {
             for (i, l) in test_img.label.iter().enumerate() {
@@ -151,5 +207,6 @@ fn main() {
         total += 1;
     }
 
-    println!("Accuracy: {:.2}%", correct as f32 / total as f32 * 100.0);
+    let after = correct as f64 / total as f64 * 100.0;
+    println!("Accuracy: {:.20}% +{}%", after, before - after);
 }

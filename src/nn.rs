@@ -85,14 +85,16 @@ impl NeuralNetwork {
     pub fn feedforward(&mut self, input: Vec<f32>) -> Vec<f32> {
         let inputs = Matrix::from_slice(&input);
 
-        for (index, layer) in self.layers.iter().enumerate() {
-            let inps = if index > 0 {
-                    self.results[index - 1].clone()
-                } else {
-                    inputs.clone()
-                };
+        self.layers[0].weights.product_into(
+            &inputs,
+            &mut self.results[0]
+        );
+        self.results[0].add_matrix(&self.layers[0].bias);
+        self.results[0].map(&sigmoid);
+
+        for (index, layer) in self.layers.iter().enumerate().skip(1) {
             layer.weights.product_into(
-                &inps,
+                unsafe { &*self.results.as_ptr().offset(index as isize - 1)},
                 &mut self.results[index]
             );
             self.results[index].add_matrix(&layer.bias);
@@ -106,14 +108,16 @@ impl NeuralNetwork {
         let inputs = Matrix::from_slice(inputs);
         let orig_inputs = inputs.clone();
 
-        for (index, layer) in self.layers.iter().enumerate() {
-            let inps = if index > 0 {
-                    self.results[index - 1].clone()
-                } else {
-                    inputs.clone()
-                };
+        self.layers[0].weights.product_into(
+            &inputs,
+            &mut self.results[0]
+        );
+        self.results[0].add_matrix(&self.layers[0].bias);
+        self.results[0].map(&sigmoid);
+
+        for (index, layer) in self.layers.iter().enumerate().skip(1) {
             layer.weights.product_into(
-                &inps,
+                unsafe { &*self.results.as_ptr().offset(index as isize - 1)},
                 &mut self.results[index]
             );
             self.results[index].add_matrix(&layer.bias);
@@ -121,10 +125,10 @@ impl NeuralNetwork {
         }
 
         let targets = Matrix::from_slice(targets);
-        let outputs = self.results.last().unwrap();
+        let outputs = &self.results[self.results.len() - 1];
         let mut errors = targets.subtract_matrix(outputs);
 
-        // Skip first element so we can ommit a branching
+        // Skip first element so we can ommit branching
         for (index, layer) in self.layers.iter_mut().enumerate().skip(1).rev() {
             self.results[index].map_into(&dsigmoid, &mut layer.gradients);
             layer.gradients.multiply_matrix(&errors);
