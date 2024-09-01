@@ -3,16 +3,17 @@ use std::time::Instant;
 use neural::matrix::Matrix;
 
 fn main() {
-    let sizes = vec![8, 64, 128, 256, 512, 1024, 2048];
+    let sizes = vec![8, 64, 128, 256, 512, 1024];//, 2048];
 
     for n in sizes {
         let mut a = Matrix::new(n, n);
         let mut b = Matrix::new(n, n);
+        let mut c = Matrix::new(n, n);
         a.randomize();
         b.randomize();
 
         let start = Instant::now();
-        let c = a.product(&b);
+        a.product_into(&b, &mut c);
         let end = start.elapsed().as_secs_f64();
 
         println!(

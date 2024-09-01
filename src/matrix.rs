@@ -85,40 +85,6 @@ impl Matrix {
 
     // TODO: Do tilewise for better cache friendliness
     #[inline(always)]
-    pub fn product(&self, b: &Self) -> Self {
-        #[cfg(debug_assertions)]
-        assert_eq!(self.columns, b.size().0);
-
-        let mut res = Self::new(self.rows, b.size().1);
-
-        let b_transposed = b.transpose();
-
-        let a = self.data.as_ptr();
-        let btm = b_transposed.data.as_ptr();
-        let r = res.data.as_mut_ptr();
-
-        let res_rows = res.rows as isize;
-        let res_cols = res.columns as isize;
-        let self_cols = self.columns as isize;
-        let b_t_cols = b_transposed.columns as isize;
-
-        for i in 0..res_rows {
-            for j in 0..res_cols {
-                let mut sum = 0.0;
-                for k in 0..self_cols {
-                    unsafe {
-                        sum += *a.offset(k + self_cols * i) * *btm.offset(k + b_t_cols * j);
-                    }
-                }
-                unsafe {
-                    *r.offset(j + res_cols * i) = sum;
-                }
-            }
-        }
-        res
-    }
-
-    #[inline(always)]
     pub fn product_into(&self, b: &Self, res: &mut Self) {
         #[cfg(debug_assertions)]
         assert_eq!(self.columns, b.size().0);
@@ -149,6 +115,13 @@ impl Matrix {
                 }
             }
         }
+    }
+
+    #[inline(always)]
+    pub fn product(&self, b: &Self) -> Self {
+        let mut res = Self::new(self.rows, b.size().1);
+        self.product_into(b, &mut res);
+        res
     }
 
     #[inline(always)]
@@ -246,7 +219,8 @@ mod tests {
         indx!(b.data, b.columns, 1, 1) = 160.0;
         indx!(b.data, b.columns, 2, 0) = 130.0;
         indx!(b.data, b.columns, 2, 1) = 160.0;
-        let res = a.product(&b);
+        let mut res = Matrix::new(a.size().0, b.size().1);
+        a.product_into(&b, &mut res);
         let mut exp = Matrix::new(2, 2);
         indx!(exp.data, exp.columns, 0, 0) = 1780.0;
         indx!(exp.data, exp.columns, 0, 1) = 2260.0;
