@@ -85,7 +85,7 @@ impl Matrix {
 
     // TODO: Do tilewise for better cache friendliness
     #[inline(always)]
-    pub fn product(&self, b: &Self ) -> Self {
+    pub fn product(&self, b: &Self) -> Self {
         #[cfg(debug_assertions)]
         assert_eq!(self.columns, b.size().0);
 
@@ -107,10 +107,7 @@ impl Matrix {
                 let mut sum = 0.0;
                 for k in 0..self_cols {
                     unsafe {
-                        sum +=
-                            *a.offset(k + self_cols * i)
-                            *
-                            *btm.offset(k + b_t_cols * j);
+                        sum += *a.offset(k + self_cols * i) * *btm.offset(k + b_t_cols * j);
                     }
                 }
                 unsafe {
@@ -144,10 +141,7 @@ impl Matrix {
                 let mut sum = 0.0;
                 for k in 0..self_cols {
                     unsafe {
-                        sum +=
-                            *a.offset(k + self_cols * i)
-                            *
-                            *btm.offset(k + b_t_cols * j);
+                        sum += *a.offset(k + self_cols * i) * *btm.offset(k + b_t_cols * j);
                     }
                 }
                 unsafe {
@@ -233,34 +227,47 @@ mod tests {
     macro_rules! indx {
         ($a:expr, $cc:expr, $r:expr, $c:expr) => {
             $a[$c + $cc * $r]
-        }
+        };
     }
 
     #[test]
     fn matrix_product() {
         let mut a = Matrix::new(2, 3);
-        indx!(a.data,a.columns,0,0)=3.0;indx!(a.data, a.columns,0,1)=6.0;indx!(a.data,a.columns,0,2)=7.0;
-        indx!(a.data,a.columns,1,0)=13.0;indx!(a.data, a.columns,1,1)=16.0;indx!(a.data,a.columns,1,2)=17.0;
+        indx!(a.data, a.columns, 0, 0) = 3.0;
+        indx!(a.data, a.columns, 0, 1) = 6.0;
+        indx!(a.data, a.columns, 0, 2) = 7.0;
+        indx!(a.data, a.columns, 1, 0) = 13.0;
+        indx!(a.data, a.columns, 1, 1) = 16.0;
+        indx!(a.data, a.columns, 1, 2) = 17.0;
         let mut b = Matrix::new(3, 2);
-        indx!(b.data,b.columns,0,0)=30.0;indx!(b.data, b.columns,0,1)=60.0;
-        indx!(b.data,b.columns,1,0)=130.0;indx!(b.data, b.columns,1,1)=160.0;
-        indx!(b.data,b.columns,2,0)=130.0;indx!(b.data, b.columns,2,1)=160.0;
+        indx!(b.data, b.columns, 0, 0) = 30.0;
+        indx!(b.data, b.columns, 0, 1) = 60.0;
+        indx!(b.data, b.columns, 1, 0) = 130.0;
+        indx!(b.data, b.columns, 1, 1) = 160.0;
+        indx!(b.data, b.columns, 2, 0) = 130.0;
+        indx!(b.data, b.columns, 2, 1) = 160.0;
         let res = a.product(&b);
         let mut exp = Matrix::new(2, 2);
-        indx!(exp.data,exp.columns,0,0)=1780.0;indx!(exp.data, exp.columns,0,1)=2260.0;
-        indx!(exp.data,exp.columns,1,0)=4680.0;indx!(exp.data, exp.columns,1,1)=6060.0;
+        indx!(exp.data, exp.columns, 0, 0) = 1780.0;
+        indx!(exp.data, exp.columns, 0, 1) = 2260.0;
+        indx!(exp.data, exp.columns, 1, 0) = 4680.0;
+        indx!(exp.data, exp.columns, 1, 1) = 6060.0;
         assert_eq!(res.data, exp.data);
     }
 
     #[test]
     fn matrix_map() {
         let mut a = Matrix::new(2, 2);
-        indx!(a.data,a.columns,0,0)=1.0;indx!(a.data, a.columns,0,1)=2.0;
-        indx!(a.data,a.columns,1,0)=3.0;indx!(a.data, a.columns,1,1)=4.0;
+        indx!(a.data, a.columns, 0, 0) = 1.0;
+        indx!(a.data, a.columns, 0, 1) = 2.0;
+        indx!(a.data, a.columns, 1, 0) = 3.0;
+        indx!(a.data, a.columns, 1, 1) = 4.0;
         a.map(&|v| v * 2.0);
         let mut exp = Matrix::new(2, 2);
-        indx!(exp.data,exp.columns,0,0)=2.0;indx!(exp.data, exp.columns,0,1)=4.0;
-        indx!(exp.data,exp.columns,1,0)=6.0;indx!(exp.data, exp.columns,1,1)=8.0;
+        indx!(exp.data, exp.columns, 0, 0) = 2.0;
+        indx!(exp.data, exp.columns, 0, 1) = 4.0;
+        indx!(exp.data, exp.columns, 1, 0) = 6.0;
+        indx!(exp.data, exp.columns, 1, 1) = 8.0;
         assert_eq!(a.data, exp.data);
     }
 
@@ -268,19 +275,22 @@ mod tests {
     fn matrix_from_vec() {
         let a = Matrix::from_slice(&[1.0, 2.0, 3.0, 4.0]);
         let mut exp = Matrix::new(4, 1);
-        indx!(exp.data,exp.columns,0,0)=1.0;
-        indx!(exp.data, exp.columns,1,0)=2.0;
-        indx!(exp.data,exp.columns,2,0)=3.0;
-        indx!(exp.data, exp.columns,3,0)=4.0;
+        indx!(exp.data, exp.columns, 0, 0) = 1.0;
+        indx!(exp.data, exp.columns, 1, 0) = 2.0;
+        indx!(exp.data, exp.columns, 2, 0) = 3.0;
+        indx!(exp.data, exp.columns, 3, 0) = 4.0;
         assert_eq!(a.data, exp.data);
     }
 
     #[test]
     fn matrix_to_vec() {
         let mut a = Matrix::new(2, 3);
-        indx!(a.data,a.columns,0,0)=3.0;indx!(a.data, a.columns,0,1)=6.0;indx!(a.data,a.columns,0,2)=7.0;
-        indx!(a.data,a.columns,1,0)=13.0;indx!(a.data, a.columns,1,1)=16.0;indx!(a.data,a.columns,1,2)=17.0;
+        indx!(a.data, a.columns, 0, 0) = 3.0;
+        indx!(a.data, a.columns, 0, 1) = 6.0;
+        indx!(a.data, a.columns, 0, 2) = 7.0;
+        indx!(a.data, a.columns, 1, 0) = 13.0;
+        indx!(a.data, a.columns, 1, 1) = 16.0;
+        indx!(a.data, a.columns, 1, 2) = 17.0;
         assert_eq!(a.to_vec(), vec![3.0, 6.0, 7.0, 13.0, 16.0, 17.0]);
     }
 }
-

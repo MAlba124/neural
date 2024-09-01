@@ -1,5 +1,5 @@
-use rand::seq::SliceRandom;
 use neural::nn::NeuralNetwork;
+use rand::seq::SliceRandom;
 
 fn main() {
     let training_data = vec![
@@ -13,10 +13,22 @@ fn main() {
     nn.set_learning_rate(0.01);
 
     println!("Before training:");
-    println!("  NN says: {:?} (should be ~1.0)", nn.feedforward(vec![1.0, 0.0]));
-    println!("  NN says: {:?} (should be ~1.0)", nn.feedforward(vec![0.0, 1.0]));
-    println!("  NN says: {:?} (should be ~0.0)", nn.feedforward(vec![0.0, 0.0]));
-    println!("  NN says: {:?} (should be ~0.0)", nn.feedforward(vec![1.0, 1.0]));
+    println!(
+        "  NN says: {:?} (should be ~1.0)",
+        nn.feedforward(vec![1.0, 0.0])
+    );
+    println!(
+        "  NN says: {:?} (should be ~1.0)",
+        nn.feedforward(vec![0.0, 1.0])
+    );
+    println!(
+        "  NN says: {:?} (should be ~0.0)",
+        nn.feedforward(vec![0.0, 0.0])
+    );
+    println!(
+        "  NN says: {:?} (should be ~0.0)",
+        nn.feedforward(vec![1.0, 1.0])
+    );
 
     for _ in 0..1000000 {
         let (inputs, target) = training_data.choose(&mut rand::thread_rng()).unwrap();
@@ -25,10 +37,22 @@ fn main() {
 
     println!("########################################");
     println!("After training:");
-    println!("  NN says: {:?} (should be ~1.0)", nn.feedforward(vec![1.0, 0.0]));
-    println!("  NN says: {:?} (should be ~1.0)", nn.feedforward(vec![0.0, 1.0]));
-    println!("  NN says: {:?} (should be ~0.0)", nn.feedforward(vec![0.0, 0.0]));
-    println!("  NN says: {:?} (should be ~0.0)", nn.feedforward(vec![1.0, 1.0]));
+    println!(
+        "  NN says: {:?} (should be ~1.0)",
+        nn.feedforward(vec![1.0, 0.0])
+    );
+    println!(
+        "  NN says: {:?} (should be ~1.0)",
+        nn.feedforward(vec![0.0, 1.0])
+    );
+    println!(
+        "  NN says: {:?} (should be ~0.0)",
+        nn.feedforward(vec![0.0, 0.0])
+    );
+    println!(
+        "  NN says: {:?} (should be ~0.0)",
+        nn.feedforward(vec![1.0, 1.0])
+    );
 
     // (Correct) Example output:
     // Before training:

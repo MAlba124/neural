@@ -47,16 +47,14 @@ impl NeuralNetwork {
             let mut bias = Matrix::new(neuron_count, 1);
             bias.randomize();
 
-            layers.push(
-                Layer {
-                    weights,
-                    bias,
-                    gradients: Matrix::new(1, 1),
-                    transposed: Matrix::new(1, 1),
-                    weights_t: Matrix::new(input_weights_count, neuron_count),
-                    weights_deltas: Matrix::new(1, 1),
-                }
-            );
+            layers.push(Layer {
+                weights,
+                bias,
+                gradients: Matrix::new(1, 1),
+                transposed: Matrix::new(1, 1),
+                weights_t: Matrix::new(input_weights_count, neuron_count),
+                weights_deltas: Matrix::new(1, 1),
+            });
             input_weights_count = neuron_count;
         }
 
@@ -85,17 +83,16 @@ impl NeuralNetwork {
     pub fn feedforward(&mut self, input: Vec<f32>) -> Vec<f32> {
         let inputs = Matrix::from_slice(&input);
 
-        self.layers[0].weights.product_into(
-            &inputs,
-            &mut self.results[0]
-        );
+        self.layers[0]
+            .weights
+            .product_into(&inputs, &mut self.results[0]);
         self.results[0].add_matrix(&self.layers[0].bias);
         self.results[0].map(&sigmoid);
 
         for (index, layer) in self.layers.iter().enumerate().skip(1) {
             layer.weights.product_into(
-                unsafe { &*self.results.as_ptr().offset(index as isize - 1)},
-                &mut self.results[index]
+                unsafe { &*self.results.as_ptr().offset(index as isize - 1) },
+                &mut self.results[index],
             );
             self.results[index].add_matrix(&layer.bias);
             self.results[index].map(&sigmoid);
@@ -108,17 +105,16 @@ impl NeuralNetwork {
         let inputs = Matrix::from_slice(inputs);
         let orig_inputs = inputs.clone();
 
-        self.layers[0].weights.product_into(
-            &inputs,
-            &mut self.results[0]
-        );
+        self.layers[0]
+            .weights
+            .product_into(&inputs, &mut self.results[0]);
         self.results[0].add_matrix(&self.layers[0].bias);
         self.results[0].map(&sigmoid);
 
         for (index, layer) in self.layers.iter().enumerate().skip(1) {
             layer.weights.product_into(
-                unsafe { &*self.results.as_ptr().offset(index as isize - 1)},
-                &mut self.results[index]
+                unsafe { &*self.results.as_ptr().offset(index as isize - 1) },
+                &mut self.results[index],
             );
             self.results[index].add_matrix(&layer.bias);
             self.results[index].map(&sigmoid);
@@ -136,7 +132,9 @@ impl NeuralNetwork {
 
             self.results[index - 1].transpose_into(&mut layer.transposed);
 
-            layer.gradients.product_into(&layer.transposed, &mut layer.weights_deltas);
+            layer
+                .gradients
+                .product_into(&layer.transposed, &mut layer.weights_deltas);
 
             layer.weights.add_matrix(&layer.weights_deltas);
             layer.bias.add_matrix(&layer.gradients);
@@ -151,7 +149,9 @@ impl NeuralNetwork {
         layer.gradients.multiply_scalar(self.learning_rate);
 
         orig_inputs.transpose_into(&mut layer.transposed);
-        layer.gradients.product_into(&layer.transposed, &mut layer.weights_deltas);
+        layer
+            .gradients
+            .product_into(&layer.transposed, &mut layer.weights_deltas);
 
         layer.weights.add_matrix(&layer.weights_deltas);
         layer.bias.add_matrix(&layer.gradients);

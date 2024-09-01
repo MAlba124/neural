@@ -15,7 +15,10 @@ fn main() {
         let c = a.product(&b);
         let end = start.elapsed().as_secs_f64();
 
-        println!("Size: {n}x{n} Perf: {:.2} GFLOP/S", (2 * n.pow(3)) as f64 / end / 1000000000.0);
+        println!(
+            "Size: {n}x{n} Perf: {:.2} GFLOP/S",
+            (2 * n.pow(3)) as f64 / end / 1000000000.0
+        );
     }
 }
 

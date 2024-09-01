@@ -1,4 +1,8 @@
-use std::{fs::File, io::{self, BufReader, Read, Write}, time::Instant};
+use std::{
+    fs::File,
+    io::{self, BufReader, Read, Write},
+    time::Instant,
+};
 
 use rand::seq::SliceRandom;
 
@@ -6,17 +10,53 @@ use neural::nn::NeuralNetwork;
 
 macro_rules! verify_img_header {
     ($n:expr, $buf:expr) => {
-        assert_eq!((($buf[0] as i32) << 24)+ (($buf[1] as i32) << 16)+ (($buf[2] as i32) << 8)+ ($buf[3] as i32), 0x00000803);
-        assert_eq!((($buf[4] as i32) << 24)+ (($buf[5] as i32) << 16)+ (($buf[6] as i32) << 8)+ ($buf[7] as i32), $n);
-        assert_eq!((($buf[8] as i32) << 24)+ (($buf[9] as i32) << 16)+ (($buf[10] as i32) << 8)+ ($buf[11] as i32), 28);
-        assert_eq!((($buf[12] as i32) << 24)+ (($buf[13] as i32) << 16)+ (($buf[14] as i32) << 8)+ ($buf[15] as i32), 28);
+        assert_eq!(
+            (($buf[0] as i32) << 24)
+                + (($buf[1] as i32) << 16)
+                + (($buf[2] as i32) << 8)
+                + ($buf[3] as i32),
+            0x00000803
+        );
+        assert_eq!(
+            (($buf[4] as i32) << 24)
+                + (($buf[5] as i32) << 16)
+                + (($buf[6] as i32) << 8)
+                + ($buf[7] as i32),
+            $n
+        );
+        assert_eq!(
+            (($buf[8] as i32) << 24)
+                + (($buf[9] as i32) << 16)
+                + (($buf[10] as i32) << 8)
+                + ($buf[11] as i32),
+            28
+        );
+        assert_eq!(
+            (($buf[12] as i32) << 24)
+                + (($buf[13] as i32) << 16)
+                + (($buf[14] as i32) << 8)
+                + ($buf[15] as i32),
+            28
+        );
     };
 }
 
 macro_rules! verify_labels_header {
     ($n:expr, $buf:expr) => {
-        assert_eq!((($buf[0] as i32) << 24)+ (($buf[1] as i32) << 16)+ (($buf[2] as i32) << 8)+ ($buf[3] as i32), 0x00000801);
-        assert_eq!((($buf[4] as i32) << 24)+ (($buf[5] as i32) << 16)+ (($buf[6] as i32) << 8)+ ($buf[7] as i32), $n);
+        assert_eq!(
+            (($buf[0] as i32) << 24)
+                + (($buf[1] as i32) << 16)
+                + (($buf[2] as i32) << 8)
+                + ($buf[3] as i32),
+            0x00000801
+        );
+        assert_eq!(
+            (($buf[4] as i32) << 24)
+                + (($buf[5] as i32) << 16)
+                + (($buf[6] as i32) << 8)
+                + ($buf[7] as i32),
+            $n
+        );
     };
 }
 
@@ -67,12 +107,15 @@ fn parse_training_images() -> Vec<Image> {
         assert!(label_buf[0] < 10);
         let mut label = [0.0; 10];
         label[label_buf[0] as usize] = 1.0;
-        images.push(
-            Image {
-                data: img_buf.iter().map(|v| *v as f32 / 255.0).collect::<Vec<f32>>().try_into().unwrap(),
-                label,
-            }
-        );
+        images.push(Image {
+            data: img_buf
+                .iter()
+                .map(|v| *v as f32 / 255.0)
+                .collect::<Vec<f32>>()
+                .try_into()
+                .unwrap(),
+            label,
+        });
     }
 
     images
@@ -101,12 +144,15 @@ fn parse_test_images() -> Vec<Image> {
         assert!(label_buf[0] < 10);
         let mut label = [0.0; 10];
         label[label_buf[0] as usize] = 1.0;
-        images.push(
-            Image {
-                data: img_buf.iter().map(|v| *v as f32 / 255.0).collect::<Vec<f32>>().try_into().unwrap(),
-                label,
-            }
-        );
+        images.push(Image {
+            data: img_buf
+                .iter()
+                .map(|v| *v as f32 / 255.0)
+                .collect::<Vec<f32>>()
+                .try_into()
+                .unwrap(),
+            label,
+        });
     }
 
     images
@@ -155,7 +201,6 @@ fn main() {
         println!("Accuracy: {:.20}%", before);
     }
 
-
     let start = Instant::now();
     let mut last = 0;
     // const TRAINING_ITERATIONS: usize = 100000;
@@ -168,13 +213,20 @@ fn main() {
         nn.train(&training_img.data, &training_img.label);
         let elapsed_secs = start.elapsed().as_secs();
         if elapsed_secs - last > 0 {
-            print!("\r\x1B[0JTraining... Elapsed time: {} [{index}/{TRAINING_ITERATIONS} {:.2}%]", secs_to_human(elapsed_secs), index as f32 / TRAINING_ITERATIONS as f32 * 100.0);
+            print!(
+                "\r\x1B[0JTraining... Elapsed time: {} [{index}/{TRAINING_ITERATIONS} {:.2}%]",
+                secs_to_human(elapsed_secs),
+                index as f32 / TRAINING_ITERATIONS as f32 * 100.0
+            );
             io::stdout().flush().unwrap();
             last = elapsed_secs;
         }
     }
 
-    println!("\r\x1B[0JTrained on {TRAINING_ITERATIONS} images in {}", secs_to_human(start.elapsed().as_secs()));
+    println!(
+        "\r\x1B[0JTrained on {TRAINING_ITERATIONS} images in {}",
+        secs_to_human(start.elapsed().as_secs())
+    );
 
     println!("Testing...");
 
