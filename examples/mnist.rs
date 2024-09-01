@@ -31,7 +31,7 @@ fn secs_to_human(secs: u64) -> String {
     let mut secs = secs;
     let mut s = String::new();
     if secs > 60 * 60 {
-        let hours = secs / 60 * 60;
+        let hours = secs / (60 * 60);
         secs -= hours * 60 * 60;
         s.push_str(&format!("{}h", hours));
     }
