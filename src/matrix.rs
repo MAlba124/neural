@@ -1,3 +1,6 @@
+use std::{collections::HashMap, sync::Mutex};
+
+use ocl::{Buffer, MemFlags, ProQue};
 use rand::Rng;
 
 #[derive(Debug, Clone)]
@@ -8,6 +11,47 @@ pub struct Matrix {
     rows: usize,
     columns: usize,
 }
+
+lazy_static::lazy_static! {
+    static ref PRO_QUE: ProQue = ProQue::builder()
+        .src(include_str!("../kernels/matrix.opencl"))
+        .build()
+        .unwrap();
+    static ref BUFFER_POOL: BufferPool = BufferPool::new();
+}
+
+struct BufferPool {
+    buffers: Mutex<HashMap<usize, Vec<Buffer<f32>>>>,
+}
+
+impl BufferPool {
+    pub fn new() -> Self {
+        Self {
+            buffers: Mutex::new(HashMap::new()),
+        }
+    }
+
+    pub fn get_buffer(&self, n: usize) -> Buffer<f32> {
+        let mut buffers = self.buffers.lock().unwrap();
+        let entry = buffers.entry(n)
+            .or_insert(Vec::new());
+        if entry.is_empty() {
+            entry.push(
+                unsafe {
+                    Buffer::new(PRO_QUE.context(), MemFlags::READ_WRITE, n, None).unwrap()
+                }
+            );
+        }
+
+        entry.pop().unwrap()
+    }
+
+    pub fn give_buffer(&self, buffer: Buffer<f32>) {
+        let mut buffers = self.buffers.lock().unwrap();
+        let _ = buffers.entry(buffer.len()).or_insert(Vec::new()).push(buffer);
+    }
+}
+
 
 impl Matrix {
     pub fn new(rows: usize, columns: usize) -> Self {
@@ -37,6 +81,27 @@ impl Matrix {
     #[inline(always)]
     pub fn multiply_scalar(&mut self, n: f32) {
         self.data.iter_mut().for_each(|v| *v *= n);
+        // SLOW:
+        // let mut a_buf = BUFFER_POOL.get_buffer(self.data.len());
+        // a_buf.set_default_queue(PRO_QUE.queue().clone());
+        // a_buf.write(&self.data).enq().unwrap();
+
+        // let kernel = PRO_QUE.kernel_builder("mult_scalar")
+        //     .arg(&a_buf)
+        //     .arg(n)
+        //     // .global_work_size(self.data.len())
+        //     .global_work_size(1)
+        //     .build()
+        //     .unwrap();
+
+        // unsafe {
+        //     kernel.enq().unwrap();
+        // }
+
+        // a_buf.set_default_queue(PRO_QUE.queue().clone());
+        // a_buf.read(&mut self.data).enq().unwrap();
+
+        // BUFFER_POOL.give_buffer(a_buf);
     }
 
     #[inline(always)]
@@ -91,30 +156,65 @@ impl Matrix {
         #[cfg(debug_assertions)]
         assert_eq!(res.size(), (self.rows, b.size().1));
 
-        let b_transposed = b.transpose();
+        // let b_transposed = b.transpose();
 
-        let a = self.data.as_ptr();
-        let btm = b_transposed.data.as_ptr();
-        let r = res.data.as_mut_ptr();
+        // let a = self.data.as_ptr();
+        // let btm = b_transposed.data.as_ptr();
+        // let bm = b.data.as_ptr();
+        // let r = res.data.as_mut_ptr();
 
         let res_rows = res.rows as isize;
         let res_cols = res.columns as isize;
         let self_cols = self.columns as isize;
-        let b_t_cols = b_transposed.columns as isize;
+        // let b_cols = b.columns as isize;
+        // let b_t_cols = b_transposed.columns as isize;
 
-        for i in 0..res_rows {
-            for j in 0..res_cols {
-                let mut sum = 0.0;
-                for k in 0..self_cols {
-                    unsafe {
-                        sum += *a.offset(k + self_cols * i) * *btm.offset(k + b_t_cols * j);
-                    }
-                }
-                unsafe {
-                    *r.offset(j + res_cols * i) = sum;
-                }
-            }
+        // for i in 0..res_rows {
+        //     for j in 0..res_cols {
+        //         let mut sum = 0.0;
+        //         for k in 0..self_cols {
+        //             unsafe {
+        //                 // sum += *a.offset(k + self_cols * i) * *btm.offset(k + b_t_cols * j);
+        //                 sum += *a.offset(k + self_cols * i) * *bm.offset(j + b_cols * k);
+        //             }
+        //         }
+        //         unsafe {
+        //             *r.offset(j + res_cols * i) = sum;
+        //         }
+        //     }
+        // }
+
+        let mut a_buf = BUFFER_POOL.get_buffer(self.data.len());
+        a_buf.set_default_queue(PRO_QUE.queue().clone());
+        a_buf.write(&self.data).enq().unwrap();
+        let mut b_buf = BUFFER_POOL.get_buffer(b.data.len());
+        b_buf.set_default_queue(PRO_QUE.queue().clone());
+        b_buf.write(&b.data).enq().unwrap();
+        let mut c_buf = BUFFER_POOL.get_buffer(res.data.len());
+        c_buf.set_default_queue(PRO_QUE.queue().clone());
+        c_buf.write(&res.data).enq().unwrap();
+
+        let kernel = PRO_QUE.kernel_builder("gemm")
+            .arg(res_rows as i32)
+            .arg(res_cols as i32)
+            .arg(self_cols as i32)
+            .arg(&a_buf)
+            .arg(&b_buf)
+            .arg(&c_buf)
+            .global_work_size([res_cols, res_rows])
+            .build()
+            .unwrap();
+
+        unsafe {
+            kernel.enq().unwrap();
         }
+
+        c_buf.set_default_queue(PRO_QUE.queue().clone());
+        c_buf.read(&mut res.data).enq().unwrap();
+
+        BUFFER_POOL.give_buffer(a_buf);
+        BUFFER_POOL.give_buffer(b_buf);
+        BUFFER_POOL.give_buffer(c_buf);
     }
 
     #[inline(always)]

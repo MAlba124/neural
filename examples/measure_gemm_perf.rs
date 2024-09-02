@@ -3,7 +3,7 @@ use std::time::Instant;
 use neural::matrix::Matrix;
 
 fn main() {
-    let sizes = vec![8, 64, 128, 256, 512, 1024];//, 2048];
+    let sizes = vec![8, 64, 128, 256, 512, 1024, 2048];
 
     for n in sizes {
         let mut a = Matrix::new(n, n);

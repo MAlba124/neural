@@ -9,7 +9,7 @@ fn main() {
         (vec![1.0, 1.0], vec![0.0]),
     ];
 
-    let mut nn = NeuralNetwork::new(2, vec![16, 16], 1);
+    let mut nn = NeuralNetwork::new(2, vec![256, 256], 1);
     nn.set_learning_rate(0.01);
 
     println!("Before training:");
@@ -30,7 +30,7 @@ fn main() {
         nn.feedforward(vec![1.0, 1.0])
     );
 
-    for _ in 0..1000000 {
+    for _ in 0..100000 {
         let (inputs, target) = training_data.choose(&mut rand::thread_rng()).unwrap();
         nn.train(&inputs, &target);
     }

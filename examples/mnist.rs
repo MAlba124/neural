@@ -204,7 +204,7 @@ fn main() {
     let start = Instant::now();
     let mut last = 0;
     // const TRAINING_ITERATIONS: usize = 100000;
-    const TRAINING_ITERATIONS: usize = 60000;
+    const TRAINING_ITERATIONS: usize = 100000;
     print!("Training... Elapsed time: 0s [0/{TRAINING_ITERATIONS} 0.00%]");
     io::stdout().flush().unwrap();
     let mut rng = rand::thread_rng();
