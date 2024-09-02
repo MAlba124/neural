@@ -33,14 +33,11 @@ impl BufferPool {
 
     pub fn get_buffer(&self, n: usize) -> Buffer<f32> {
         let mut buffers = self.buffers.lock().unwrap();
-        let entry = buffers.entry(n)
-            .or_insert(Vec::new());
+        let entry = buffers.entry(n).or_insert(Vec::new());
         if entry.is_empty() {
-            entry.push(
-                unsafe {
-                    Buffer::new(PRO_QUE.context(), MemFlags::READ_WRITE, n, None).unwrap()
-                }
-            );
+            entry.push(unsafe {
+                Buffer::new(PRO_QUE.context(), MemFlags::READ_WRITE, n, None).unwrap()
+            });
         }
 
         entry.pop().unwrap()
@@ -48,10 +45,12 @@ impl BufferPool {
 
     pub fn give_buffer(&self, buffer: Buffer<f32>) {
         let mut buffers = self.buffers.lock().unwrap();
-        let _ = buffers.entry(buffer.len()).or_insert(Vec::new()).push(buffer);
+        let _ = buffers
+            .entry(buffer.len())
+            .or_insert(Vec::new())
+            .push(buffer);
     }
 }
-
 
 impl Matrix {
     pub fn new(rows: usize, columns: usize) -> Self {
@@ -194,7 +193,8 @@ impl Matrix {
         c_buf.set_default_queue(PRO_QUE.queue().clone());
         c_buf.write(&res.data).enq().unwrap();
 
-        let kernel = PRO_QUE.kernel_builder("gemm")
+        let kernel = PRO_QUE
+            .kernel_builder("gemm")
             .arg(res_rows as i32)
             .arg(res_cols as i32)
             .arg(self_cols as i32)
