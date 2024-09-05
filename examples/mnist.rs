@@ -6,7 +6,7 @@ use std::{
 
 use rand::seq::SliceRandom;
 
-use neural::nn::NeuralNetwork;
+use neural::{matrix::init, nn::NeuralNetwork};
 
 macro_rules! verify_img_header {
     ($n:expr, $buf:expr) => {
@@ -159,11 +159,13 @@ fn parse_test_images() -> Vec<Image> {
 }
 
 fn main() {
+    init();
+
     let training = parse_training_images();
     let tests = parse_test_images();
 
-    let mut nn = NeuralNetwork::new(784, vec![128, 128, 128], 10);
-    nn.set_learning_rate(0.1);
+    let mut nn = NeuralNetwork::new(784, vec![16, 16, 16], 10);
+    nn.set_learning_rate(0.04);
 
     let mut before = 100.0;
     if true {
@@ -201,10 +203,15 @@ fn main() {
         println!("Accuracy: {:.20}%", before);
     }
 
+    println!(
+        "pred: {:?} actual: {:?}",
+        nn.feedforward(tests[0].data.to_vec()),
+        tests[0].label
+    );
+
     let start = Instant::now();
     let mut last = 0;
-    // const TRAINING_ITERATIONS: usize = 100000;
-    const TRAINING_ITERATIONS: usize = 100000;
+    const TRAINING_ITERATIONS: usize = 1000000;
     print!("Training... Elapsed time: 0s [0/{TRAINING_ITERATIONS} 0.00%]");
     io::stdout().flush().unwrap();
     let mut rng = rand::thread_rng();
@@ -260,5 +267,11 @@ fn main() {
     }
 
     let after = correct as f64 / total as f64 * 100.0;
-    println!("Accuracy: {:.20}% +{}%", after, before - after);
+    println!("Accuracy: {:.20}% +{}%", after, after - before);
+
+    println!(
+        "pred: {:?} actual: {:?}",
+        nn.feedforward(tests[0].data.to_vec()),
+        tests[0].label
+    );
 }

@@ -1,15 +1,15 @@
 use crate::matrix::Matrix;
 
-#[inline(always)]
-fn sigmoid(x: f32) -> f32 {
-    1.0 / (1.0 + (-x).exp())
-}
+// #[inline(always)]
+// fn sigmoid(x: f32) -> f32 {
+//     1.0 / (1.0 + (-x).exp())
+// }
 
-// Assumes y comes from sigmoid()
-#[inline(always)]
-fn dsigmoid(y: f32) -> f32 {
-    y * (1.0 - y)
-}
+// // Assumes y comes from sigmoid()
+// #[inline(always)]
+// fn dsigmoid(y: f32) -> f32 {
+//     y * (1.0 - y)
+// }
 
 #[derive(Debug)]
 pub struct Layer {
@@ -87,7 +87,7 @@ impl NeuralNetwork {
             .weights
             .product_into(&inputs, &mut self.results[0]);
         self.results[0].add_matrix(&self.layers[0].bias);
-        self.results[0].map(&sigmoid);
+        self.results[0].sigmoid();
 
         for (index, layer) in self.layers.iter().enumerate().skip(1) {
             layer.weights.product_into(
@@ -95,7 +95,7 @@ impl NeuralNetwork {
                 &mut self.results[index],
             );
             self.results[index].add_matrix(&layer.bias);
-            self.results[index].map(&sigmoid);
+            self.results[index].sigmoid();
         }
 
         self.results.last().unwrap().to_vec()
@@ -109,7 +109,7 @@ impl NeuralNetwork {
             .weights
             .product_into(&inputs, &mut self.results[0]);
         self.results[0].add_matrix(&self.layers[0].bias);
-        self.results[0].map(&sigmoid);
+        self.results[0].sigmoid();
 
         for (index, layer) in self.layers.iter().enumerate().skip(1) {
             layer.weights.product_into(
@@ -117,7 +117,7 @@ impl NeuralNetwork {
                 &mut self.results[index],
             );
             self.results[index].add_matrix(&layer.bias);
-            self.results[index].map(&sigmoid);
+            self.results[index].sigmoid();
         }
 
         let targets = Matrix::from_slice(targets);
@@ -126,7 +126,7 @@ impl NeuralNetwork {
 
         // Skip first element so we can ommit branching
         for (index, layer) in self.layers.iter_mut().enumerate().skip(1).rev() {
-            self.results[index].map_into(&dsigmoid, &mut layer.gradients);
+            self.results[index].dsigmoid(&mut layer.gradients);
             layer.gradients.multiply_matrix(&errors);
             layer.gradients.multiply_scalar(self.learning_rate);
 
@@ -144,7 +144,7 @@ impl NeuralNetwork {
         }
 
         let layer = &mut self.layers[0];
-        self.results[0].map_into(&dsigmoid, &mut layer.gradients);
+        self.results[0].dsigmoid(&mut layer.gradients);
         layer.gradients.multiply_matrix(&errors);
         layer.gradients.multiply_scalar(self.learning_rate);
 
