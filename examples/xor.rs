@@ -1,6 +1,6 @@
 use std::io;
-use std::time::Instant;
 use std::io::Write;
+use std::time::Instant;
 
 use neural::{matrix::init, nn::NeuralNetwork};
 use rand::seq::SliceRandom;

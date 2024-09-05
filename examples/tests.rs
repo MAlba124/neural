@@ -322,9 +322,10 @@ fn sigmoid() {
         let ca_t = ca.transpose().to_vec();
         let mut a = Matrix::from_slice_cm(&ca_t.clone(), rows, cols);
         a.sigmoid();
-        let real = ca_t.iter()
-                .map(|v| 1.0 / (1.0 + (-v).exp()))
-                .collect::<Vec<f32>>();
+        let real = ca_t
+            .iter()
+            .map(|v| 1.0 / (1.0 + (-v).exp()))
+            .collect::<Vec<f32>>();
         let got = a.to_vec();
         for i in 0..real.len() {
             if real[i].max(got[i]) - real[i].min(got[i]) > 0.01 {
